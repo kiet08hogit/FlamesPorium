@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import { useAuth } from '@clerk/nextjs';
 import { useParams, useRouter } from 'next/navigation';
 import { motion } from 'framer-motion';
+import axios from 'axios';
 import { Loader2, MapPin, MessageSquare, Shield, Tag, Calendar, GraduationCap, Heart, AlertTriangle, BookOpen, Star, MoreVertical } from 'lucide-react';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
@@ -24,14 +25,11 @@ export default function ProfilePage() {
       if (!isLoaded || !isSignedIn) return;
       try {
         const token = await getToken();
-        const res = await fetch(`http://localhost:3000/users/${userId}`, {
+        const res = await axios.get(`http://localhost:3000/users/${userId}`, {
           headers: { Authorization: `Bearer ${token}` }
         });
         
-        if (res.ok) {
-          const data = await res.json();
-          setUserProfile(data);
-        }
+        setUserProfile(res.data);
       } catch (err) {
         console.error('Failed to fetch profile', err);
       } finally {

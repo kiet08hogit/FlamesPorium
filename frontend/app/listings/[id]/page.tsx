@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { useAuth } from "@clerk/nextjs";
 import { useParams, useRouter } from "next/navigation";
 import { motion } from "framer-motion";
+import axios from "axios";
 import { Loader2, ArrowLeft, Heart, MessageSquare, Tag, MapPin, CheckCircle2, Shield, ChevronRight } from "lucide-react";
 import Link from "next/link";
 import CampusMap from "@/components/CampusMap";
@@ -57,6 +58,7 @@ export default function ListingDetailPage() {
   const [error, setError] = useState("");
   const [activeImageIndex, setActiveImageIndex] = useState(0);
   const [isWishlisted, setIsWishlisted] = useState(false);
+  const [isStartingChat, setIsStartingChat] = useState(false);
 
   useEffect(() => {
     if (!isLoaded) return;
@@ -69,15 +71,11 @@ export default function ListingDetailPage() {
     const fetchListing = async () => {
       try {
         const token = await getToken();
-        const res = await fetch(`http://localhost:3000/listings/${params.id}`, {
+        const res = await axios.get(`http://localhost:3000/listings/${params.id}`, {
           headers: { Authorization: `Bearer ${token}` },
         });
 
-        if (!res.ok) {
-          throw new Error("Listing not found");
-        }
-
-        const data = await res.json();
+        const data = res.data;
         setListing(data);
       } catch (err: any) {
         setError(err.message || "Failed to fetch listing");
@@ -88,6 +86,29 @@ export default function ListingDetailPage() {
 
     fetchListing();
   }, [params.id, isLoaded, isSignedIn, getToken, router]);
+
+  const handleTalkToSeller = async () => {
+    if (!listing?.seller?.id || isStartingChat) return;
+    
+    setIsStartingChat(true);
+    try {
+      const token = await getToken();
+      const res = await axios.post(`http://localhost:3000/chat/conversation/${listing.seller.clerkUserId || listing.seller.id}`, {}, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      
+      if (res.status === 200 || res.status === 201) {
+        const conversation = res.data;
+        router.push(`/chat?id=${conversation.id}`);
+      } else {
+        console.error("Failed to start conversation");
+        setIsStartingChat(false);
+      }
+    } catch (err) {
+      console.error("Error starting chat:", err);
+      setIsStartingChat(false);
+    }
+  };
 
   if (!isLoaded || isLoading) {
     return (
@@ -353,9 +374,15 @@ export default function ListingDetailPage() {
                 <Button
                   size="lg"
                   variant="outline"
+                  onClick={handleTalkToSeller}
+                  disabled={isStartingChat}
                   className="font-bold h-11 rounded-lg border-zinc-200 text-sm hover:border-zinc-300"
                 >
-                  <MessageSquare className="mr-1.5 h-4 w-4" />
+                  {isStartingChat ? (
+                    <Loader2 className="mr-1.5 h-4 w-4 animate-spin" />
+                  ) : (
+                    <MessageSquare className="mr-1.5 h-4 w-4" />
+                  )}
                   Talk To Seller
                 </Button>
               </div>

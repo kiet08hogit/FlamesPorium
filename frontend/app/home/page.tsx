@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import { useAuth } from '@clerk/nextjs';
 import { motion } from 'framer-motion';
 import { Loader2, Tag } from 'lucide-react';
+import axios from 'axios';
 import Link from 'next/link';
 
 interface Seller {
@@ -38,14 +39,11 @@ export default function Home() {
       try {
         const token = await getToken();
         const url = 'http://localhost:3000/listings/all';
-        const res = await fetch(url, {
+        const res = await axios.get(url, {
           headers: { Authorization: `Bearer ${token}` }
         });
 
-        if (res.ok) {
-          const data = await res.json();
-          setListings(data);
-        }
+        setListings(res.data);
       } catch (err) {
         console.error('Failed to fetch listings', err);
       } finally {
