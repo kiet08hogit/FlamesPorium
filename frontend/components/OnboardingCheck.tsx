@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react';
 import { useAuth } from '@clerk/nextjs';
 import { usePathname, useRouter } from 'next/navigation';
+import axios from 'axios';
 
 export function OnboardingCheck() {
   const { getToken, isLoaded, isSignedIn } = useAuth();
@@ -21,18 +22,16 @@ export function OnboardingCheck() {
         const token = await getToken();
         if (!token) return;
 
-        const res = await fetch('http://localhost:3000/users/me', {
+        const res = await axios.get('http://localhost:3000/users/me', {
           headers: {
             Authorization: `Bearer ${token}`
           }
         });
 
-        if (res.ok) {
-          const dbUser = await res.json();
-          // If the user exists but hasn't completed onboarding, redirect
-          if (dbUser && dbUser.onboardingComplete === false) {
-            router.push('/onboarding');
-          }
+        const dbUser = res.data;
+        // If the user exists but hasn't completed onboarding, redirect
+        if (dbUser && dbUser.onboardingComplete === false) {
+          router.push('/onboarding');
         }
       } catch (e) {
         console.error("Failed to check onboarding status", e);

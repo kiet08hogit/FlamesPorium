@@ -2,8 +2,8 @@
 
 import { useState, useEffect } from 'react';
 import { useAuth } from '@clerk/nextjs';
-import { motion } from 'framer-motion';
 import { Loader2, Filter, Tag } from 'lucide-react';
+import axios from 'axios';
 import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
 import { Button } from "@/components/ui/button";
@@ -55,15 +55,11 @@ export default function ListingsGridPage() {
         const url = activeCategory === 'ALL'
           ? 'http://localhost:3000/listings/all'
           : `http://localhost:3000/listings/all?category=${activeCategory}`;
-
-        const res = await fetch(url, {
+        const res = await axios.get(url, {
           headers: { Authorization: `Bearer ${token}` }
         });
 
-        if (res.ok) {
-          const data = await res.json();
-          setListings(data);
-        }
+        setListings(res.data);
       } catch (err) {
         console.error('Failed to fetch listings', err);
       } finally {
